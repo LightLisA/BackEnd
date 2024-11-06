@@ -1,17 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from config import settings
 
-
-DB_HOST = "localhost"
-DB_PORT = 5432
-DB_USER = "postgres"
-DB_PASS = "postgres"
-DB_NAME = "postgres"
-
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # створюємо двіжок
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(settings.DATABASE_URL)
 
 # генератор сесій - транзакцій
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

@@ -1,0 +1,6 @@
+fastapi
+unicorn
+sqlalchemy
+aiosqlite
+alembic
+asyncpg

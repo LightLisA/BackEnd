@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, JSON
 
-from FastAPI_Pydantic_DB.app.database import Base
+from app.database import Base
 
 
 class Hotels(Base):

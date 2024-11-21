@@ -4,4 +4,5 @@ sqlalchemy
 aiosqlite
 alembic
 asyncpg
-dotenv
+passlib
+passlib[argon2]

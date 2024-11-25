@@ -1,9 +1,10 @@
 from jose import jwt, JWTError, ExpiredSignatureError
-from jwt.exceptions import InvalidTokenError
-from fastapi import Request, HTTPException, status, Depends
+from fastapi import Request, Depends
 from app.config import settings
 from datetime import datetime, timezone
+from app.users.models import Users
 from app.users.services_dao import UsersDAO
+from app.exeptions import *
 
 
 def get_token(request: Request):
@@ -31,20 +32,26 @@ async def get_current_user(jwt_token: str = Depends(get_token)):
             settings.ALGORITHM
         )
     except ExpiredSignatureError:
-        raise credentials_exception("Token has expired")
+        raise HTTPException_InvalidToken
     except JWTError:
-        raise credentials_exception("Invalid Token")
+        raise HTTPException_IncorrectTokenFormat
 
     expire: str = payload.get("exp")
     if (not expire) or (int(expire) < datetime.now(timezone.utc).timestamp()):
-        raise credentials_exception("Token has expired..")
+        raise HTTPException_TokenExpired
 
     user_id: str = payload.get("sub")
     if not user_id:
-        raise credentials_exception("Used ID hasn't found")
+        raise HTTPException_UserIdNotFound
 
     username = await UsersDAO.find_by_id(int(user_id))
     if not username:
-        raise credentials_exception("User hasn't found")
+        raise HTTPException_UserNotFound
 
     return username
+
+
+async def get_admin_users(current_user: Users = Depends(get_current_user)):
+    # if current_user.role != "admin":
+    #     raise HTTPException(status_code=401)
+    return current_user

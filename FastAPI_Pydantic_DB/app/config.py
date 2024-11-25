@@ -16,6 +16,9 @@ class Settings(BaseSettings):
         values['DATABASE_URL'] = f"postgresql+asyncpg://{values['DB_USER']}:{values['DB_PASS']}@{values['DB_HOST']}:{values['DB_PORT']}/{values['DB_NAME']}"
         return values
 
+    SECRET_KEY: str
+    ALGORITHM: str
+
     class Config:
         env_file = '.env'
 

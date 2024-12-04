@@ -1,8 +1,7 @@
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 import jwt
-from pydantic import BaseModel, EmailStr
-from fastapi import HTTPException
+from pydantic import EmailStr
 from app.users.services_dao import UsersDAO
 from app.config import settings
 

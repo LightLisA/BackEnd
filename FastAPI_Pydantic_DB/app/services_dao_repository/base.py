@@ -1,4 +1,4 @@
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, and_
 from app.database import async_session_maker
 
 
@@ -25,8 +25,13 @@ class BaseDAO:
     @classmethod
     async def find_all(cls, **filter_by):   # or filter_by=None - but you can't use filters
         async with async_session_maker() as session:
-            query = select(cls.model.__table__.columns).filter_by(**filter_by)
+            query = select(cls.model.__table__.columns)
+            # Додаємо умови, якщо є фільтри
+            if filter_by:
+                filters = [getattr(cls.model, key) == value for key, value in filter_by.items()]
+                query = query.where(and_(*filters))
             results = await session.execute(query)
+            # print(f'Find All = {results}')
             return results.mappings().all()
 
     @classmethod

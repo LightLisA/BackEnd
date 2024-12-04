@@ -42,3 +42,15 @@ HTTPException_UserNotFound = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
+HTTPException_RoomCannotBeBooked = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="No available seats/rooms",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+HTTPException_BookedRoomHasRemoved = HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND,
+    detail="Booking not found",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+

@@ -19,12 +19,6 @@ def get_token(request: Request):
 
 
 async def get_current_user(jwt_token: str = Depends(get_token)):
-    credentials_exception = lambda detail: HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=detail,
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
     try:
         payload = jwt.decode(
             jwt_token,

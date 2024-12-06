@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бронювання Готелів</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="container">
+    <h1>Доступні Готелі</h1>
+
+    <!-- Додайте більше готелів за потреби -->
+    <div>
+        {% for hotel in hotels %}
+        <div class="hotel">
+            <img src="{{ url_for('static', path='images/' + hotel.image_id|string + '.webp') }}"
+                 alt="{{ hotel.name }}"
+                 width="300">
+            <div class="hotel-info">
+                <div class="hotel-title">{{ hotel.name }}</div>
+                <div class="hotel-location">{{ hotel.location }}</div>
+                <div class="hotel-services">
+                    {% for service in hotel.services %}
+                    <span>| {{ service }} |</span>
+                    {% endfor %}
+                </div>
+                <a href="#" class="book-button">Забронювати</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+<div>
+</body>
+</html>

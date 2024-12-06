@@ -14,13 +14,6 @@ async def get_all_hotels() -> list[SHotel]:
     return await HotelsDAO.find_all()
 
 
-# @router.get("/search")
-# async def get_hotels_by_filters(search_args: HotelSearchArg = Depends()) -> list[SHotel]:
-#     # Конвертуємо `search_args` у словник
-#     filter_dict = {key: value for key, value in vars(search_args).items() if value is not None}
-#     return (await HotelsDAO.find_all(**filter_dict)
-
-
 @router.get("/{location}")
 async def get_hotels_by_name(location: HotelList = Depends()) -> list[SHotel]:
     hotels = await HotelsDAO.get_list_of_hotels(location)

@@ -1,7 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
 from datetime import date
-from fastapi import Query
 
 
 class SHotel(BaseModel):
@@ -11,17 +9,24 @@ class SHotel(BaseModel):
     services: list[str]
     rooms_quantity: int
     image_id: int
-    rooms_left: Optional[int] = None
 
     class Config:
         from_attributes = True
         from_orm = True
 
 
-class HotelList(BaseModel):
+class SHotelInfo(BaseModel):
+    id: int
+    name: str
     location: str
-    date_from: date
-    date_to: date
+    services: list[str]
+    rooms_quantity: int
+    image_id: int
+    rooms_left: int = Field(..., alias="room_left")
+
+    class Config:
+        from_attributes = True
+        from_orm = True
 
 
 class HotelID(BaseModel):

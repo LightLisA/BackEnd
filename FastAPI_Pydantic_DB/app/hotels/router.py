@@ -1,6 +1,10 @@
-from fastapi import APIRouter, Depends
-from app.hotels.schemas import SHotel, HotelList
+import asyncio
+from datetime import date, datetime
+from fastapi import APIRouter, Depends, Query
+from app.hotels.schemas import SHotel, SHotelInfo
 from app.hotels.services_dao import HotelsDAO
+from pydantic import parse_obj_as
+from fastapi_cache.decorator import cache
 
 
 router = APIRouter(
@@ -15,19 +19,19 @@ async def get_all_hotels() -> list[SHotel]:
 
 
 @router.get("/{location}")
-async def get_hotels_by_name(location: HotelList = Depends()) -> list[SHotel]:
-    hotels = await HotelsDAO.get_list_of_hotels(location)
-    # Конвертуємо ORM-об'єкти в Pydantic-моделі
-    # return [SHotel.from_orm(hotel) for hotel in hotels]
-    # return [SHotel(**hotel) for hotel in hotels]
-    # return hotels
-    return [
-        SHotel(
-            **hotel['Hotels'].__dict__,
-            rooms_left=hotel['rooms_left']
-        )
-        for hotel in hotels
-    ]
+@cache(expire=40)
+async def get_hotels_by_name(
+        # location: HotelList = Depends()
+        location: str,
+        date_from: date = Query(..., description=f"Example, {datetime.now().date()}"),
+        date_to: date = Query(..., description=f"Example, {datetime.now().date()}"),
+):
+    await asyncio.sleep(3)
+    hotels = await HotelsDAO.get_list_of_hotels(location, date_from, date_to)
+    print(f"HOTEL === {hotels}")
+    hotels_json = parse_obj_as(list[SHotelInfo], hotels)
+    print(hotels_json)
+    return hotels_json
 
 
 @router.get("/id/{hotel_id}")

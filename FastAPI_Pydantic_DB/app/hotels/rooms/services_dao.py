@@ -10,10 +10,8 @@ class RoomsDAO(BaseDAO):
     model = Rooms
 
     @classmethod
-    async def get_rooms_by_hotel_id(cls, data_filter):
+    async def get_rooms_by_hotel_id(cls, hotel_id, date_from, date_to):
         async with async_session_maker() as session:
-            # data_filter => hotel_id=1 date_from='2024-02-25' date_to='2024-04-20'
-            print(f"Duration = {(data_filter.date_to - data_filter.date_from).days}")
             count_booked_rooms_by_hotels = (
                 select(
                     Rooms.id,
@@ -24,15 +22,15 @@ class RoomsDAO(BaseDAO):
                 .join(Rooms, Rooms.id == Bookings.room_id)
                 .where(
                     and_(
-                        Rooms.hotel_id == data_filter.hotel_id,
+                        Rooms.hotel_id == hotel_id,
                         or_(
                             and_(
-                                Bookings.date_from >= data_filter.date_from,
-                                Bookings.date_from <= data_filter.date_to,
+                                Bookings.date_from >= date_from,
+                                Bookings.date_from <= date_to,
                             ),
                             and_(
-                                Bookings.date_from <= data_filter.date_from,
-                                Bookings.date_to > data_filter.date_from,
+                                Bookings.date_from <= date_from,
+                                Bookings.date_to > date_from,
                             ),
                         )
                     )
@@ -43,10 +41,10 @@ class RoomsDAO(BaseDAO):
 
             query = (
                 select(
-                    Rooms,
-                    ((data_filter.date_to - data_filter.date_from).days * Rooms.price).label("total_cost"),
-                    (Rooms.quantity - func.coalesce(count_booked_rooms_by_hotels.c.total_booked_rooms,
-                                                           0)).label("rooms_left")
+                    Rooms.__table__.columns,
+                    ((date_to - date_from).days * Rooms.price).label("total_cost"),
+                    (Rooms.quantity - func.coalesce(count_booked_rooms_by_hotels.c.total_booked_rooms, 0))
+                    .label("rooms_left")
                 )
                 .select_from(count_booked_rooms_by_hotels)
                 .join(Rooms, Rooms.id == count_booked_rooms_by_hotels.c.id)
@@ -54,8 +52,6 @@ class RoomsDAO(BaseDAO):
             )
 
         results = await session.execute(query)
-        # hotels = results.scalars().all()
-        # print(f"Scalars All = {hotels}")
-        hotels = results.mappings().all()
+        hotels = results.all()
         print(f"Mappings All = {hotels}")
         return hotels

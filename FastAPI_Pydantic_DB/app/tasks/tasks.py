@@ -1,7 +1,4 @@
-from time import sleep
-
 from pydantic import EmailStr
-
 from app.config import settings
 from app.tasks.celery_tasks import celery
 from PIL import Image
@@ -27,21 +24,52 @@ def send_booking_confirmation_email(
         booking: dict,
         email_to: EmailStr
 ):
-    sleep(10)
+    # sleep(10)
     email_to_mock = settings.SMTP_USER
     # msg_content = create_booking_confirmation_template(booking, email_to)
     msg_content = create_booking_confirmation_template(booking, email_to_mock)
 
-    # with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-    #     server.login(settings.SMTP_USER, settings.SMTP_PASS)
-    #     server.send_message(msg_content)
-
-    # Використання TLS замість SSL
+    # Використання SSL
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.starttls()  # Увімкнення TLS
+        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT) as server:
             server.login(settings.SMTP_USER, settings.SMTP_PASS)
             server.send_message(msg_content)
-            print("Email sent successfully!")
     except Exception as e:
         print("Error:", e)
+
+    # Використання TLS замість SSL
+    # try:
+    #     with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+    #         server.starttls()  # Увімкнення TLS
+    #         server.login(settings.SMTP_USER, settings.SMTP_PASS)
+    #         server.send_message(msg_content)
+    #         print("Email sent successfully!")
+    # except Exception as e:
+    #     print("Error:", e)
+
+
+def send_booking_confirmation_email_fun(
+        booking: dict,
+        email_to: EmailStr
+):
+    email_to_mock = settings.SMTP_USER
+    # msg_content = create_booking_confirmation_template(booking, email_to)
+    msg_content = create_booking_confirmation_template(booking, email_to_mock)
+
+    # Використання SSL
+    try:
+        with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.login(settings.SMTP_USER, settings.SMTP_PASS)
+            server.send_message(msg_content)
+    except Exception as e:
+        print("Error:", e)
+
+    # Використання TLS замість SSL
+    # try:
+    #     with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+    #         server.starttls()  # Увімкнення TLS
+    #         server.login(settings.SMTP_USER, settings.SMTP_PASS)
+    #         server.send_message(msg_content)
+    #         print("Email sent successfully!")
+    # except Exception as e:
+    #     print("Error:", e)

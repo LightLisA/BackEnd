@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, BackgroundTasks
 from app.bookings.schemas import SBooking, SBookingInfo
 from app.bookings.services_dao import BookingDAO
 from app.users.models import Users
@@ -6,7 +6,7 @@ from app.users.dependecies import get_current_user
 from datetime import date, datetime
 from app.exeptions import *
 from pydantic import parse_obj_as
-from app.tasks.tasks import send_booking_confirmation_email
+from app.tasks.tasks import send_booking_confirmation_email, send_booking_confirmation_email_fun
 
 
 router = APIRouter(
@@ -31,7 +31,30 @@ async def add_booking(
     if not booking:
         raise HTTPException_RoomCannotBeBooked
     booking_dict = parse_obj_as(SBooking, booking).dict()
+    # Celery variant for sent email
     send_booking_confirmation_email.delay(booking_dict, user[0].email)
+    return booking_dict
+
+
+@router.post("/theSameButOnlyForBackgroundTasks")
+async def add_booking_for_background_tasks(
+        background_tasks: BackgroundTasks,
+        room_id: int,
+        date_from: date = Query(..., description=f"Example, {datetime.now().date()}"),
+        date_to: date = Query(..., description=f"Example, {datetime.now().date()}"),
+        user: Users = Depends(get_current_user),
+):
+    booking = await BookingDAO.add(user[0].id, room_id, date_from, date_to)
+    if not booking:
+        raise HTTPException_RoomCannotBeBooked
+    booking_dict = parse_obj_as(SBooking, booking).dict()
+
+    # Celery variant for sent email
+    # send_booking_confirmation_email.delay(booking_dict, user[0].email)
+
+    # Background Task variant of sent email
+    background_tasks.add_task(send_booking_confirmation_email_fun, booking_dict, user[0].email)
+
     return booking_dict
 
 

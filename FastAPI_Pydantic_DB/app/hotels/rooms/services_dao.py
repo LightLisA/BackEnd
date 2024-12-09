@@ -53,5 +53,5 @@ class RoomsDAO(BaseDAO):
 
         results = await session.execute(query)
         hotels = results.all()
-        print(f"Mappings All = {hotels}")
+        # print(f"Mappings All = {hotels}")
         return hotels

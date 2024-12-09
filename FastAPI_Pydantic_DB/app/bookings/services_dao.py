@@ -1,6 +1,6 @@
 from datetime import date
 from app.database import async_session_maker
-from sqlalchemy import select, func, and_, or_, insert, delete
+from sqlalchemy import select, func, and_, or_, insert, delete, inspect
 from app.bookings.models import Bookings
 from app.hotels.rooms.models import Rooms
 from app.services_dao_repository.base import BaseDAO
@@ -11,57 +11,54 @@ class BookingDAO(BaseDAO):
     model = Bookings
 
     @classmethod
-    async def add(cls, user_id: int, room_id: int, date_from: date, date_to: date):
+    async def add(cls,
+                  user_id: int,
+                  room_id: int,
+                  date_from: date,
+                  date_to: date
+                  ):
         async with async_session_maker() as session:
-            booked_rooms = (
-                select(Bookings)
+            get_rooms_left = (
+                select(
+                    (Rooms.quantity - func.count(Bookings.room_id)).label("rooms_left")
+                )
+                .select_from(Bookings)
+                .join(Rooms, Rooms.id == Bookings.room_id, full=True)
                 .where(
                     and_(
-                        Bookings.room_id == room_id,
+                        Rooms.id == room_id,
                         or_(
+                            Bookings.room_id.is_(None),
                             and_(
-                                Bookings.date_from >= date_from,
-                                Bookings.date_from <= date_to
+                                Bookings.date_from > date_from,
+                                Bookings.date_from < date_to
                             ),
                             and_(
-                                Bookings.date_from <= date_from,
+                                Bookings.date_from < date_from,
                                 Bookings.date_to > date_from
                             ),
                         )
                     )
-                ).cte("booked_rooms")  # Common Table Expression (WITH)
-            )
-
-            get_rooms_left_query = (
-                select(
-                    (Rooms.quantity - func.count(booked_rooms.c.room_id)).label("rooms_left")
                 )
-                .select_from(Rooms)
-                .join(booked_rooms, booked_rooms.c.room_id == Rooms.id, isouter=True)
-                .where(Rooms.id == room_id)
-                .group_by(Rooms.quantity, booked_rooms.c.room_id)
-            )
+            ).group_by(Rooms.id, Rooms.quantity)
 
-            # print(get_rooms_left_query.compile(engine, compile_kwargs={"literal_binds": True}))
-            result = await session.execute(get_rooms_left_query)
-            rooms_left = result.scalar()
-            # print(f"Rooms left: {rooms_left}")
+            rooms_left = await session.execute(get_rooms_left)
+            rooms_left = rooms_left.scalar()
 
-            if rooms_left > 0:
-                get_price = select(Rooms.price).filter_by(id=room_id)
-                price = await session.execute(get_price)
-                price: int = price.scalar()
+            if not rooms_left or rooms_left > 0:
+                get_price = await session.execute(select(Rooms.price).filter_by(id=room_id))
                 add_booking = insert(Bookings).values(
                     room_id=room_id,
                     user_id=user_id,
                     date_from=date_from,
                     date_to=date_to,
-                    price=price,
+                    price=get_price.scalar(),
                 ).returning(Bookings)
 
                 new_booking = await session.execute(add_booking)
                 await session.commit()
-                return new_booking.scalar()
+                result = new_booking.scalar()
+                return result
             else:
                 return None
 
